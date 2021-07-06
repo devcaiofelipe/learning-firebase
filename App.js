@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, Button } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Button, FlatList, ActivityIndicator } from 'react-native';
+import Listagem from './src/Listagem.js';
 import firebase from './src/config/firebaseConnection.js';
 console.disableYellowBox=true;
 
@@ -8,10 +9,25 @@ export default function App() {
 
   const [nome, setNome] = useState('');
   const [cargo, setCargo] = useState('');
+  const [usuarios, setUsuarios] = useState([]);
+  const [loading, setLoading] = useState(true);
 
 
   useEffect(() => {
     async function dados() {
+      await firebase.database().ref('usuarios').on('value', (snapshot) => {
+        setUsuarios([]);
+        snapshot.forEach((child) => {
+          let data = {
+            key: child.key,
+            nome: child.val().nome,
+            cargo: child.val().cargo
+          };
+
+          setUsuarios(oldArray => [...oldArray, data].reverse());
+          setLoading(false);
+        })
+      })
       // Cria um nó
       // await firebase.database().ref('tipo').set('Vendedor')
 
@@ -40,6 +56,8 @@ export default function App() {
       //   setNome(snapshot.val().nome);
       //   setIdade(snapshot.val().idade);
       // });
+
+
     };
     dados()
   }, []);
@@ -81,6 +99,16 @@ export default function App() {
 
       <Button title="Novo funcionário"
       onPress={ cadastrar }/>
+
+      { loading ? (
+        <ActivityIndicator color="#121212" size={40}/>
+      ) : (<FlatList 
+            keyExtractor={item => item.key}
+            data={ usuarios }
+            renderItem={({ item }) => ( <Listagem data={ item }/> )}/>
+            ) }
+
+      
     </View>
   )
 };
